@@ -107,21 +107,30 @@ module.exports.startRide = async ({ rideId, otp, captain }) => {
         throw new Error('Ride id and OTP are required');
     }
 
+    console.log('Service: Starting ride - RideId:', rideId, 'OTP:', otp, 'Captain:', captain._id);
+
     const ride = await rideModel.findOne({
         _id: rideId
     }).populate('user').populate('captain').select('+otp');
 
     if (!ride) {
+        console.log('Service: Ride not found for ID:', rideId);
         throw new Error('Ride not found');
     }
 
+    console.log('Service: Found ride - Status:', ride.status, 'Stored OTP:', ride.otp, 'Provided OTP:', otp);
+
     if (ride.status !== 'accepted') {
+        console.log('Service: Ride not accepted, current status:', ride.status);
         throw new Error('Ride not accepted');
     }
 
     if (ride.otp !== otp) {
+        console.log('Service: OTP mismatch - Expected:', ride.otp, 'Got:', otp);
         throw new Error('Invalid OTP');
     }
+
+    console.log('Service: OTP verified, updating ride status to ongoing');
 
     await rideModel.findOneAndUpdate({
         _id: rideId
@@ -129,6 +138,7 @@ module.exports.startRide = async ({ rideId, otp, captain }) => {
         status: 'ongoing'
     })
 
+    console.log('Service: Ride status updated successfully');
     return ride;
 }
 

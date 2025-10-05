@@ -89,15 +89,23 @@ module.exports.confirmRide = async (req, res) => {
 module.exports.startRide = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log('Validation errors:', errors.array());
         return res.status(400).json({ errors: errors.array() });
     }
 
     const { rideId, otp } = req.query;
 
     try {
+        console.log('Starting ride - RideId:', rideId, 'OTP:', otp, 'Captain:', req.captain ? req.captain._id : 'NO CAPTAIN');
+        
+        if (!req.captain) {
+            console.log('No captain found in request');
+            return res.status(401).json({ message: 'Captain not authenticated' });
+        }
+
         const ride = await rideService.startRide({ rideId, otp, captain: req.captain });
 
-        console.log(ride);
+        console.log('Ride started successfully:', ride._id);
 
         sendMessageToSocketId(ride.user.socketId, {
             event: 'ride-started',
@@ -106,6 +114,7 @@ module.exports.startRide = async (req, res) => {
 
         return res.status(200).json(ride);
     } catch (err) {
+        console.log('Error starting ride:', err.message);
         return res.status(500).json({ message: err.message });
     }
 }
